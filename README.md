@@ -2,7 +2,7 @@
 A step-by-step guide on running this project.
 
 > MacOS
-1. Create a the virtual environment
+1. Create a new virtual environment
 ```
 python3 -m venv .venv
 ```
