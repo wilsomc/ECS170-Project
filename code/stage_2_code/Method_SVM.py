@@ -7,7 +7,8 @@ Concrete MethodModule class for a specific learning MethodModule
 
 from code.base_class.method import method
 from sklearn import svm
-
+from rich.progress import Progress
+import time
 
 class Method_SVM(method):
     c = None

@@ -14,15 +14,16 @@ if 1:
     #------------------------------------------------------
 
     # ---- objection initialization setction ---------------
-    data_obj = Dataset_Loader('toy', '')
-    data_obj.dataset_source_folder_path = '../../data/stage_1_data/'
-    data_obj.dataset_source_file_name = 'toy_data_file.txt'
+    data_obj = Dataset_Loader('stage_two_train', '')
+    data_obj.dataset_source_folder_path = '../../data/stage_2_data/'
+    data_obj.dataset_train_source_file_name = 'train.csv'
+    data_obj.dataset_test_source_file_name = 'test.csv'
 
     method_obj = Method_SVM('support vector machine', '')
     method_obj.c = c
 
     result_obj = Result_Saver('saver', '')
-    result_obj.result_destination_folder_path = '../../result/stage_1_result/SVM_'
+    result_obj.result_destination_folder_path = '../../result/stage_2_result/SVM_'
     result_obj.result_destination_file_name = 'prediction_result'
 
     setting_obj = Setting_KFold_CV('k fold cross validation', '')
