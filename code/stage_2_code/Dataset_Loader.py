@@ -44,12 +44,4 @@ class Dataset_Loader(dataset):
 
         return {'X_train': X_train, 'y_train': y_train, 'X_test': X_test, 'y_test': y_test}
 
-if __name__ == '__main__':
-    data_obj = Dataset_Loader('stage_two_train', '')
-    data_obj.dataset_source_folder_path = '../../data/stage_2_data/'
-    data_obj.dataset_train_source_file_name = 'train.csv'
-    data_obj.dataset_test_source_file_name = 'test.csv'
-
-    data_obj.load()
-
 
