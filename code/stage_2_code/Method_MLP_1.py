@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 class Method_MLP_1(method, nn.Module):
     data = None
     # it defines the max rounds to train the model
-    max_epoch = 500
+    max_epoch = 400
     # it defines the learning rate for gradient descent based optimizer for model learning
     learning_rate = 1e-3
 
@@ -40,16 +40,17 @@ class Method_MLP_1(method, nn.Module):
 
     # it defines the forward propagation function for input x
     # this function will calculate the output layer by layer
-
     def forward(self, x):
         '''Forward propagation'''
         # hidden layer embeddings
-        h = self.activation_func_1(self.fc_layer_1(x))
-        # outout layer result
+        # output layer result
         # self.fc_layer_2(h) will be a nx2 tensor
+        h1 = self.activation_func_1(self.fc_layer_1(x))
+        h2 = self.activation_func_2(self.fc_layer_2(h1))
+        h3 = self.activation_func_3(self.fc_layer_3(h2))
         # n (denotes the input instance number): 0th dimension; 2 (denotes the class number): 1st dimension
         # we do softmax along dim=1 to get the normalized classification probability distributions for each instance
-        y_pred = self.activation_func_2(self.fc_layer_2(h))
+        y_pred = self.activation_func_4(self.fc_layer_4(h3))
         return y_pred
 
     # backward error propagation will be implemented by pytorch automatically
@@ -68,11 +69,12 @@ class Method_MLP_1(method, nn.Module):
         # it will be an iterative gradient updating process
         # we don't do mini-batch, we use the whole input as one batch
         # you can try to split X and y into smaller-sized batches by yourself
-        for epoch in range(self.max_epoch): # you can do an early stop if self.max_epoch is too much...
+        X_tensor = torch.FloatTensor(np.array(X))
+        # convert y to torch.tensor as well
+        y_true = torch.LongTensor(np.array(y))
+        for epoch in range(self.max_epoch):  # you can do an early stop if self.max_epoch is too much...
             # get the output, we need to covert X into torch.tensor so pytorch algorithm can operate on it
-            y_pred = self.forward(torch.FloatTensor(np.array(X)))
-            # convert y to torch.tensor as well
-            y_true = torch.LongTensor(np.array(y))
+            y_pred = self.forward(X_tensor)
             # calculate the training loss
             train_loss = loss_function(y_pred, y_true)
 
@@ -87,7 +89,7 @@ class Method_MLP_1(method, nn.Module):
 
             loss_history.append(train_loss.item())
 
-            if epoch%100 == 0:
+            if epoch % 100 == 0:
                 accuracy_evaluator.data = {'true_y': y_true, 'pred_y': y_pred.max(1)[1]}
                 print('Epoch:', epoch, 'Accuracy:', accuracy_evaluator.evaluate(), 'Loss:', train_loss.item())
 
@@ -96,15 +98,15 @@ class Method_MLP_1(method, nn.Module):
         plt.title("Training Loss Curve")
         plt.xlabel("Epoch")
         plt.ylabel("Loss")
-        plt.savefif("../../result/stage_2_result/learning_curve_improved.png")
-    
+        plt.savefig("../../result/stage_2_result/learning_curve_improved.png")
+
     def test(self, X):
         # do the testing, and result the result
         y_pred = self.forward(torch.FloatTensor(np.array(X)))
         # convert the probability distributions to the corresponding labels
         # instances will get the labels corresponding to the largest probability
         return y_pred.max(1)[1]
-    
+
     def run(self):
         print('method running...')
         print('--start training...')
@@ -112,4 +114,4 @@ class Method_MLP_1(method, nn.Module):
         print('--start testing...')
         pred_y = self.test(self.data['test']['X'])
         return {'pred_y': pred_y, 'true_y': self.data['test']['y']}
-            
+
