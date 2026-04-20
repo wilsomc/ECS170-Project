@@ -26,8 +26,8 @@ if 1:
     result_obj.result_destination_folder_path = '../../result/stage_2_result/SVM_'
     result_obj.result_destination_file_name = 'prediction_result'
 
-    setting_obj = Setting_KFold_CV('k fold cross validation', '')
-    #setting_obj = Setting_Train_Test_Split('train test split', '')
+    #setting_obj = Setting_KFold_CV('k fold cross validation', '')
+    setting_obj = Setting_Train_Test_Split('train test split', '')
 
     evaluate_obj = Evaluate_Accuracy('accuracy', '')
     # ------------------------------------------------------
