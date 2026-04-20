@@ -1,4 +1,8 @@
-# Getting Started
+# ECS 170 Project
+Project files for group: WE_LUV_BLUEBERRIES<br>
+Spring 2026
+
+## Getting Started
 A step-by-step guide on running this project.
 
 > MacOS
@@ -22,3 +26,5 @@ Opening the virtual environment.
 ```
 source .venv/bin/activate
 ```
+## Data Files
+https://docs.google.com/document/d/1sAEs6Rv2ZBE4w0MyJrvBBdEjpqAzEDJS/edit
