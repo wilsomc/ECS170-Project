@@ -2,7 +2,7 @@ import pickle
 from matplotlib import pyplot as plt
 
 # loading ORL dataset
-if 1:
+if 0:
 	f = open('../../data/stage_3_data/ORL', 'rb')
 	data = pickle.load(f)
 	f.close()
@@ -27,7 +27,7 @@ if 1:
 		break
 		
 # loading CIFAR-10 dataset
-if 0:
+if 1:
 	f = open('../../data/stage_3_data/CIFAR', 'rb')
 	data = pickle.load(f)
 	f.close()
