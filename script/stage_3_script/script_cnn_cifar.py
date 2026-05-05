@@ -20,14 +20,15 @@ if __name__ == '__main__':
     torch.manual_seed(2)
 
     # ---- object initialization section ---------------
-    data_obj = Dataset_Loader(dName='dataset for cifar-10', dDescription='train/test set')
+    # Define setType (the type of dataset) in Dataset_Loader for transformer
+    data_obj = Dataset_Loader(dName='dataset for cifar-10', dDescription='train/test set', dSetType="cifar")
     data_obj.dataset_source_folder_path = '../../data/stage_3_data/'
     data_obj.dataset_source_file_name = 'CIFAR'
 
     method_obj = Method_CNN_CIFAR(nName='convolution neural network', mDescription='using cifar-10 dataset', loaded_data=data_obj.load())
 
     # ---- running section ---------------------------------
-    print('************ Start (Original) ************')
+    print('************ Start (CIFAR-10 CNN) ************')
     method_obj.run()
     print('************ Finish ************')
     # ------------------------------------------------------

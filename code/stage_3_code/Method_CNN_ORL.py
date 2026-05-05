@@ -4,13 +4,14 @@ CNN Architecture for ORL Dataset
 
 import torch
 from torch import nn
+from code.stage_3_code.Evaluate_Accuracy import Evaluate_Accuracy
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
 
 class Method_CNN_ORL(nn.Module):
     # it defines the max rounds to train the model
-    max_epoch = 2
+    max_epoch = 10
     # it defines the learning rate for gradient descent based optimizer for model learning
     learning_rate = 1e-3
 
@@ -27,12 +28,12 @@ class Method_CNN_ORL(nn.Module):
         self.method_description = mDescription
         self.trainloader, self.testloader = loaded_data
 
-        self.conv1 = nn.Conv2d(3, 6, 5, padding='valid')
+        self.conv1 = nn.Conv2d(1, 6, 5, padding='valid')
         self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        self.conv2 = nn.Conv2d(6, 16, 5, padding='valid')
+        self.fc1 = nn.Linear(16 * 25 * 20, 256)
+        self.fc2 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, 40)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
@@ -63,6 +64,7 @@ class Method_CNN_ORL(nn.Module):
             for i, data in enumerate(trainloader, 0):
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels = data
+                labels = labels - 1
 
                 total_samples += len(labels)  # count images this batch
                 total_batches += 1  # count batches
@@ -93,18 +95,22 @@ class Method_CNN_ORL(nn.Module):
         # Training Loss Plot
         plt.figure()
         plt.plot(loss_history)
-        plt.title("Training Loss Curve")
+        plt.title("ORL Training Loss Curve")
         plt.xlabel("Epoch")
         plt.ylabel("Loss")
         plt.savefig("../../result/stage_3_result/orl_training_loss_curve.png")
 
     def test(self, testloader):
+        all_predicted = []
+        all_labels = []
+
         correct = 0
         total = 0
         # since we're not training, we don't need to calculate the gradients for our outputs
         with torch.no_grad():
             for data in testloader:
                 images, labels = data
+                labels = labels - 1
                 # calculate outputs by running images through the network
                 outputs = self(images)
                 # the class with the highest energy is what we choose as prediction
@@ -112,7 +118,11 @@ class Method_CNN_ORL(nn.Module):
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
 
-        print(f'Accuracy of the network on the 10000 test images: {100 * correct // total} %')
+                all_predicted.extend(predicted.cpu().numpy())
+                all_labels.extend(labels.cpu().numpy())
+
+        evaluator = Evaluate_Accuracy(dPredicted=all_predicted, dLabels=all_labels)
+        evaluator.evaluate()
 
     def run(self):
         print('method running...')

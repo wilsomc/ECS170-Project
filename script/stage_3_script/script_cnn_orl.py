@@ -19,14 +19,15 @@ if __name__ == '__main__':
     torch.manual_seed(2)
 
     # ---- object initialization section ---------------
-    data_obj = Dataset_Loader(dName='dataset for mnist', dDescription='train/test set')
+    # Define setType (the type of dataset) in Dataset_Loader for transformer
+    data_obj = Dataset_Loader(dName='dataset for orl', dDescription='train/test set', dSetType="orl")
     data_obj.dataset_source_folder_path = '../../data/stage_3_data/'
-    data_obj.dataset_source_file_name = 'MNIST'
+    data_obj.dataset_source_file_name = 'ORL'
 
-    method_obj = Method_CNN_ORL(nName='convolution neural network', mDescription='using mnist dataset', loaded_data=data_obj.load())
+    method_obj = Method_CNN_ORL(nName='convolution neural network', mDescription='using orl dataset', loaded_data=data_obj.load())
 
     # ---- running section ---------------------------------
-    print('************ Start (Original) ************')
+    print('************ Start (ORL CNN) ************')
     method_obj.run()
     print('************ Finish ************')
     # ------------------------------------------------------

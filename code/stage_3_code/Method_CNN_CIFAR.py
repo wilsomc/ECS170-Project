@@ -4,13 +4,14 @@ CNN Architecture for CIFIR-10 Dataset
 
 import torch
 from torch import nn
+from code.stage_3_code.Evaluate_Accuracy import Evaluate_Accuracy
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
 
 class Method_CNN_CIFAR(nn.Module):
     # it defines the max rounds to train the model
-    max_epoch = 2
+    max_epoch = 10
     # it defines the learning rate for gradient descent based optimizer for model learning
     learning_rate = 1e-3
 
@@ -28,12 +29,12 @@ class Method_CNN_CIFAR(nn.Module):
         self.trainloader, self.testloader = loaded_data
 
 
-        self.conv1 = nn.Conv2d(3, 6, 5, padding='valid')
+        self.conv1 = nn.Conv2d(3, 32, 3, padding=1)
         self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5, padding='valid')
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
+        self.fc1 = nn.Linear(64 * 8 * 8, 256)
+        self.fc2 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, 10)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
@@ -94,12 +95,15 @@ class Method_CNN_CIFAR(nn.Module):
         # Training Loss Plot
         plt.figure()
         plt.plot(loss_history)
-        plt.title("Training Loss Curve")
+        plt.title("CIFIR-10 Training Loss Curve")
         plt.xlabel("Epoch")
         plt.ylabel("Loss")
-        plt.savefig("../../result/stage_3_result/cifir_training_loss_curve.png")
+        plt.savefig("../../result/stage_3_result/cifar_training_loss_curve.png")
 
     def test(self, testloader):
+        all_predicted = []
+        all_labels = []
+
         correct = 0
         total = 0
         # since we're not training, we don't need to calculate the gradients for our outputs
@@ -113,7 +117,11 @@ class Method_CNN_CIFAR(nn.Module):
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
 
-        print(f'Accuracy of the network on the 10000 test images: {100 * correct // total} %')
+                all_predicted.extend(predicted.cpu().numpy())
+                all_labels.extend(labels.cpu().numpy())
+
+        evaluator = Evaluate_Accuracy(dPredicted=all_predicted, dLabels=all_labels)
+        evaluator.evaluate()
 
     def run(self):
         print('method running...')
