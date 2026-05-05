@@ -1,5 +1,6 @@
 '''
-CNN Architecture for ORL Dataset
+CNN Architecture for ORL Dataset (Face Recognition)
+ORL images: 3 x 112 x 92 (grayscale stored as RGB), 40 classes
 '''
 
 import torch
@@ -10,7 +11,7 @@ import matplotlib.pyplot as plt
 
 class Method_CNN_ORL(nn.Module):
     # it defines the max rounds to train the model
-    max_epoch = 2
+    max_epoch = 30
     # it defines the learning rate for gradient descent based optimizer for model learning
     learning_rate = 1e-3
 
@@ -27,12 +28,17 @@ class Method_CNN_ORL(nn.Module):
         self.method_description = mDescription
         self.trainloader, self.testloader = loaded_data
 
+        # ORL images: 3 x 112 x 92
+        # After conv1(3->6, kernel=5, valid): 6 x 108 x 88
+        # After pool(2,2): 6 x 54 x 44
+        # After conv2(6->16, kernel=5, valid): 16 x 50 x 40
+        # After pool(2,2): 16 x 25 x 20 = 8000
         self.conv1 = nn.Conv2d(3, 6, 5, padding='valid')
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        self.fc1 = nn.Linear(16 * 25 * 20, 256)
+        self.fc2 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, 40)  # 40 classes for ORL faces
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
@@ -47,72 +53,60 @@ class Method_CNN_ORL(nn.Module):
     # so we don't need to define the error backpropagation function here
 
     def fit(self, trainloader):
-        # check here for the torch.optim doc: https://pytorch.org/docs/stable/optim.html
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        # check here for the nn.CrossEntropyLoss doc: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
         loss_function = nn.CrossEntropyLoss()
-        # for training accuracy investigation purpose
 
         loss_history = []
 
-        for epoch in range(self.max_epoch):  # loop over the dataset multiple times
+        for epoch in range(self.max_epoch):
             running_loss = 0.0
-            total_samples = 0  # track samples
-            total_batches = 0  # track batches
+            total_samples = 0
+            total_batches = 0
 
             for i, data in enumerate(trainloader, 0):
-                # get the inputs; data is a list of [inputs, labels]
                 inputs, labels = data
 
-                total_samples += len(labels)  # count images this batch
-                total_batches += 1  # count batches
+                total_samples += len(labels)
+                total_batches += 1
 
-                # zero the parameter gradients
                 optimizer.zero_grad()
 
-                # forward + backward + optimize
                 outputs = self(inputs)
                 loss = loss_function(outputs, labels)
                 loss.backward()
                 optimizer.step()
 
-                loss_history.append(loss.item())  # Gets current loss value from gradient descent
-
-                # print statistics
+                loss_history.append(loss.item())
                 running_loss += loss.item()
-                if i % 200 == 199:  # print every 2000 mini-batches
-                    print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.3f}')
-                    running_loss = 0.0
 
-                # Print summary after every epoch
-                print(f'[Epoch {epoch + 1}] '
-                      f'batches: {total_batches}, '
-                      f'samples seen: {total_samples}, '
-                      f'loss: {running_loss / total_batches:.3f}')
+            # Print summary after every epoch
+            avg_loss = running_loss / max(total_batches, 1)
+            print(f'[Epoch {epoch + 1}] '
+                  f'batches: {total_batches}, '
+                  f'samples seen: {total_samples}, '
+                  f'avg loss: {avg_loss:.3f}')
 
         # Training Loss Plot
         plt.figure()
         plt.plot(loss_history)
-        plt.title("Training Loss Curve")
-        plt.xlabel("Epoch")
+        plt.title("ORL Training Loss Curve")
+        plt.xlabel("Batch")
         plt.ylabel("Loss")
-        plt.savefig("../../result/stage_3_result/orl_training_loss_curve.png")
+        plt.savefig("result/stage_3_result/orl_training_loss_curve.png")
+        print("Saved learning curve to result/stage_3_result/orl_training_loss_curve.png")
 
     def test(self, testloader):
         correct = 0
         total = 0
-        # since we're not training, we don't need to calculate the gradients for our outputs
         with torch.no_grad():
             for data in testloader:
                 images, labels = data
-                # calculate outputs by running images through the network
                 outputs = self(images)
-                # the class with the highest energy is what we choose as prediction
                 _, predicted = torch.max(outputs, 1)
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
 
-        print(f'Accuracy of the network on the 10000 test images: {100 * correct // total} %')
+        print(f'Accuracy of the network on the {total} test images: {100 * correct / total:.2f} %')
 
     def run(self):
         print('method running...')

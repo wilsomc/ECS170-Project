@@ -1,5 +1,6 @@
 '''
-CNN Architecture for CIFIR-10 Dataset
+CNN Architecture for CIFAR-10 Dataset
+CIFAR images: 3 x 32 x 32, 10 classes
 '''
 
 import torch
@@ -10,7 +11,7 @@ import matplotlib.pyplot as plt
 
 class Method_CNN_CIFAR(nn.Module):
     # it defines the max rounds to train the model
-    max_epoch = 2
+    max_epoch = 20
     # it defines the learning rate for gradient descent based optimizer for model learning
     learning_rate = 1e-3
 
@@ -27,93 +28,107 @@ class Method_CNN_CIFAR(nn.Module):
         self.method_description = mDescription
         self.trainloader, self.testloader = loaded_data
 
+        # CIFAR images: 3 x 32 x 32
+        # Block 1: conv(3->32, 3, pad=1) -> BN -> ReLU -> MaxPool(2) => 32 x 16 x 16
+        self.conv1 = nn.Conv2d(3, 32, 3, padding=1)
+        self.bn1 = nn.BatchNorm2d(32)
+        # Block 2: conv(32->64, 3, pad=1) -> BN -> ReLU -> MaxPool(2) => 64 x 8 x 8
+        self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
+        self.bn2 = nn.BatchNorm2d(64)
+        # Block 3: conv(64->128, 3, pad=1) -> BN -> ReLU -> MaxPool(2) => 128 x 4 x 4
+        self.conv3 = nn.Conv2d(64, 128, 3, padding=1)
+        self.bn3 = nn.BatchNorm2d(128)
 
-        self.conv1 = nn.Conv2d(3, 6, 5, padding='valid')
         self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5, padding='valid')
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        self.dropout_conv = nn.Dropout2d(0.25)
+        self.dropout_fc = nn.Dropout(0.5)
+
+        # 128 * 4 * 4 = 2048
+        self.fc1 = nn.Linear(128 * 4 * 4, 256)
+        self.fc2 = nn.Linear(256, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = torch.flatten(x, 1)  # flatten all dimensions except batch
+        # Block 1
+        x = self.pool(F.relu(self.bn1(self.conv1(x))))
+        x = self.dropout_conv(x)
+        # Block 2
+        x = self.pool(F.relu(self.bn2(self.conv2(x))))
+        x = self.dropout_conv(x)
+        # Block 3
+        x = self.pool(F.relu(self.bn3(self.conv3(x))))
+        x = self.dropout_conv(x)
+
+        x = torch.flatten(x, 1)
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = self.dropout_fc(x)
+        x = self.fc2(x)
         return x
 
     # backward error propagation will be implemented by pytorch automatically
     # so we don't need to define the error backpropagation function here
 
     def fit(self, trainloader):
-        # check here for the torch.optim doc: https://pytorch.org/docs/stable/optim.html
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        # check here for the nn.CrossEntropyLoss doc: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
         loss_function = nn.CrossEntropyLoss()
-        # for training accuracy investigation purpose
 
         loss_history = []
 
-        for epoch in range(self.max_epoch):  # loop over the dataset multiple times
+        for epoch in range(self.max_epoch):
             running_loss = 0.0
-            total_samples = 0  # track samples
-            total_batches = 0  # track batches
+            total_samples = 0
+            total_batches = 0
+
+            self.train()  # set to training mode (enables dropout/BN)
 
             for i, data in enumerate(trainloader, 0):
-                # get the inputs; data is a list of [inputs, labels]
                 inputs, labels = data
 
-                total_samples += len(labels)  # count images this batch
-                total_batches += 1  # count batches
+                total_samples += len(labels)
+                total_batches += 1
 
-                # zero the parameter gradients
                 optimizer.zero_grad()
 
-                # forward + backward + optimize
                 outputs = self(inputs)
                 loss = loss_function(outputs, labels)
                 loss.backward()
                 optimizer.step()
 
-                loss_history.append(loss.item()) # Gets current loss value from gradient descent
+                loss_history.append(loss.item())
 
-                # print statistics
                 running_loss += loss.item()
-                if i % 200 == 199:  # print every 2000 mini-batches
-                    print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.3f}')
+                if i % 200 == 199:
+                    print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 200:.3f}')
                     running_loss = 0.0
 
-                # Print summary after every epoch
-                print(f'[Epoch {epoch + 1}] '
-                      f'batches: {total_batches}, '
-                      f'samples seen: {total_samples}, '
-                      f'loss: {running_loss / total_batches:.3f}')
+            # Print summary after every epoch
+            avg_loss = sum(loss_history[-total_batches:]) / total_batches
+            print(f'[Epoch {epoch + 1}] '
+                  f'batches: {total_batches}, '
+                  f'samples seen: {total_samples}, '
+                  f'avg loss: {avg_loss:.3f}')
 
         # Training Loss Plot
         plt.figure()
         plt.plot(loss_history)
-        plt.title("Training Loss Curve")
-        plt.xlabel("Epoch")
+        plt.title("CIFAR-10 Training Loss Curve")
+        plt.xlabel("Batch")
         plt.ylabel("Loss")
-        plt.savefig("../../result/stage_3_result/cifir_training_loss_curve.png")
+        plt.savefig("result/stage_3_result/cifar_training_loss_curve.png")
+        print("Saved learning curve to result/stage_3_result/cifar_training_loss_curve.png")
 
     def test(self, testloader):
         correct = 0
         total = 0
-        # since we're not training, we don't need to calculate the gradients for our outputs
+        self.eval()  # set to eval mode (disables dropout/BN)
         with torch.no_grad():
             for data in testloader:
                 images, labels = data
-                # calculate outputs by running images through the network
                 outputs = self(images)
-                # the class with the highest energy is what we choose as prediction
                 _, predicted = torch.max(outputs, 1)
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
 
-        print(f'Accuracy of the network on the 10000 test images: {100 * correct // total} %')
+        print(f'Accuracy of the network on the {total} test images: {100 * correct / total:.2f} %')
 
     def run(self):
         print('method running...')
